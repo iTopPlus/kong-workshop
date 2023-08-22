@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   kong-database:
@@ -36,19 +36,22 @@ services:
       - KONG_PROXY_ERROR_LOG=/dev/stderr
       - KONG_ADMIN_ERROR_LOG=/dev/stderr
       - KONG_TRUSTED_IPS=0.0.0.0/0,::/0
+      # - KONG_LUA_PACKAGE_PATH=/usr/local/kong/plugins/?.lua;;
+      - KONG_PLUGINS=bundled,zipkin-header
       - KONG_REAL_IP_RECURSIVE=on
       - KONG_REAL_IP_HEADER=Cf-Connecting-Ip
       - KONG_TRACING_INSTRUMENTATIONS=all
       - KONG_TRACING_SAMPLING_RATE=1.0
       - KONG_LOG_LEVEL=debug
+    volumes:
+      - ./plugins/zipkin-header/kong/plugins/zipkin-header:/usr/local/share/lua/5.1/kong/plugins/zipkin-header
     ports:
       - 80:8000
-      - 443:8443 
-      - 127.0.0.1:8001:8001
-      - 127.0.0.1:8002:8002
+      - 443:8443
+      - 8001:8001
+      - 8002:8002
     healthcheck:
       test: ["CMD", "kong", "health"]
       interval: 5s
       timeout: 2s
       retries: 5
-    
