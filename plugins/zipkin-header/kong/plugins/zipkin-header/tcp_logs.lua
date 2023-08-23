@@ -1,15 +1,7 @@
 local cjson = require "cjson"
-local sandbox = require "kong.tools.sandbox".sandbox
-local kong_meta = require "kong.meta"
-
-
 local kong = kong
 local ngx = ngx
 local timer_at = ngx.timer.at
-
-
-local sandbox_opts = { env = { kong = kong, ngx = ngx } }
-
 
 local function log(premature, conf, message)
   if premature then
@@ -31,14 +23,6 @@ local function log(premature, conf, message)
     return
   end
 
-  if conf.log_tls then
-    ok, err = sock:sslhandshake(true, conf.log_tls_sni, false)
-    if not ok then
-      kong.log.err("failed to perform TLS handshake to ", host, ":", port, ": ", err)
-      sock:close()
-      return
-    end
-  end
 
   ok, err = sock:send(cjson.encode(message) .. "\n")
   if not ok then
@@ -58,23 +42,17 @@ local tcp_logs = {}
 
 
 function tcp_logs:log(conf)
-  if conf.log_custom_fields_by_lua then
-    local set_serialize_value = kong.log.set_serialize_value
-    for key, expression in pairs(conf.log_custom_fields_by_lua) do
-      set_serialize_value(key, sandbox(expression, sandbox_opts)())
-    end
-  end
-
-  local message = kong.log.serialize()
+  
+  local message = kong.request.get_headers()
   local body, err, mimetype = kong.request.get_body()
   if err then
     kong.log.err("failed to get request body: ", err)
   elseif body then
     if mimetype == "application/json" then
-      message.body = body
+      message.request_body = body
     end
   end
-  message.mime_type = mimetype
+  message.request_body_mime_type = mimetype
 
 
   local ok, err = timer_at(0, log, conf, message)

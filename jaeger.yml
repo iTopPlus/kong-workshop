@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   jaeger-collector:
     # image: jaegertracing/jaeger-collector:latest
@@ -19,3 +19,4 @@ services:
       - --log-level=debug
     ports:
       - 16686:16686
+      - 9411:9411

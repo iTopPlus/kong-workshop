@@ -3,10 +3,9 @@ local new_span = require "kong.plugins.zipkin-header.span".new
 local utils = require "kong.tools.utils"
 local propagation = require "kong.tracing.propagation"
 local request_tags = require "kong.plugins.zipkin-header.request_tags"
-local tcp_logs = require "kong.plugins.zipkin-header.tcp_logs"
 local kong_meta = require "kong.meta"
 local ngx_re = require "ngx.re"
-
+local tcp_logs = require "kong.plugins.zipkin-header.tcp_logs"
 
 local ngx = ngx
 local ngx_var = ngx.var
@@ -87,7 +86,7 @@ end
 
 
 local initialize_request
-
+local local_should_sample = false
 
 local function get_context(conf, ctx)
   local zipkin = ctx.zipkin
@@ -112,6 +111,7 @@ if subsystem == "http" then
 
     if should_sample == nil then
       should_sample = math_random() < conf.sample_ratio
+      local_should_sample = should_sample
     end
 
     if trace_id == nil then
@@ -146,7 +146,6 @@ if subsystem == "http" then
     request_span:set_tag("http.path", path)
     request_span:set_tag("pc_request_id",req_headers['pc_request_id'] )
     request_span:set_tag("pc_request_name",req_headers['pc_request_name'] )
-    tcp_logs.log(conf)
     if protocol then
       request_span:set_tag("http.protocol", protocol)
     end
@@ -189,6 +188,13 @@ if subsystem == "http" then
     get_or_add_proxy_span(zipkin, access_start)
 
     propagation.set(conf.header_type, zipkin.header_type, zipkin.proxy_span, conf.default_header_type)
+    if local_should_sample then
+      local ok , err =  tcp_logs:log(conf)
+      if not ok then
+        kong.log.err("failed to log to tcp: ", err)
+      end
+    end
+    
   end
 
 
