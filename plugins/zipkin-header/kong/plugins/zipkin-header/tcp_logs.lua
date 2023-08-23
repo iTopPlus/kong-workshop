@@ -16,10 +16,10 @@ local function log(premature, conf, message)
     return
   end
 
-  local host = conf.host
-  local port = conf.port
-  local timeout = conf.timeout
-  local keepalive = conf.keepalive
+  local host = conf.log_host
+  local port = conf.log_port
+  local timeout = conf.log_timeout
+  local keepalive = conf.log_keepalive
 
   local sock = ngx.socket.tcp()
   sock:settimeout(timeout)
@@ -31,8 +31,8 @@ local function log(premature, conf, message)
     return
   end
 
-  if conf.tls then
-    ok, err = sock:sslhandshake(true, conf.tls_sni, false)
+  if conf.log_tls then
+    ok, err = sock:sslhandshake(true, conf.log_tls_sni, false)
     if not ok then
       kong.log.err("failed to perform TLS handshake to ", host, ":", port, ": ", err)
       sock:close()
@@ -54,21 +54,29 @@ local function log(premature, conf, message)
 end
 
 
-local TcpLogHandler = {
-  PRIORITY = 7,
-  VERSION = kong_meta.version,
-}
+local tcp_logs = {}
 
 
-function TcpLogHandler:log(conf)
-  if conf.custom_fields_by_lua then
+function tcp_logs:log(conf)
+  if conf.log_custom_fields_by_lua then
     local set_serialize_value = kong.log.set_serialize_value
-    for key, expression in pairs(conf.custom_fields_by_lua) do
+    for key, expression in pairs(conf.log_custom_fields_by_lua) do
       set_serialize_value(key, sandbox(expression, sandbox_opts)())
     end
   end
 
   local message = kong.log.serialize()
+  local body, err, mimetype = kong.request.get_body()
+  if err then
+    kong.log.err("failed to get request body: ", err)
+  elseif body then
+    if mimetype == "application/json" then
+      message.body = body
+    end
+  end
+  message.mime_type = mimetype
+
+
   local ok, err = timer_at(0, log, conf, message)
   if not ok then
     kong.log.err("failed to create timer: ", err)
@@ -76,4 +84,4 @@ function TcpLogHandler:log(conf)
 end
 
 
-return TcpLogHandler
+return tcp_logs

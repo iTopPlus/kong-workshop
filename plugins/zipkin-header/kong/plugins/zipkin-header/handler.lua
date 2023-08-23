@@ -1,8 +1,9 @@
-local new_zipkin_reporter = require "kong.plugins.zipkin.reporter".new
-local new_span = require "kong.plugins.zipkin.span".new
+local new_zipkin_reporter = require "kong.plugins.zipkin-header.reporter".new
+local new_span = require "kong.plugins.zipkin-header.span".new
 local utils = require "kong.tools.utils"
 local propagation = require "kong.tracing.propagation"
-local request_tags = require "kong.plugins.zipkin.request_tags"
+local request_tags = require "kong.plugins.zipkin-header.request_tags"
+local tcp_logs = require "kong.plugins.zipkin-header.tcp_logs"
 local kong_meta = require "kong.meta"
 local ngx_re = require "ngx.re"
 
@@ -145,6 +146,7 @@ if subsystem == "http" then
     request_span:set_tag("http.path", path)
     request_span:set_tag("pc_request_id",req_headers['pc_request_id'] )
     request_span:set_tag("pc_request_name",req_headers['pc_request_name'] )
+    tcp_logs.log(conf)
     if protocol then
       request_span:set_tag("http.protocol", protocol)
     end
