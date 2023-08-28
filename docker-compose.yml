@@ -36,7 +36,7 @@ services:
       - KONG_PROXY_ERROR_LOG=/dev/stderr
       - KONG_ADMIN_ERROR_LOG=/dev/stderr
       - KONG_TRUSTED_IPS=0.0.0.0/0,::/0
-      - KONG_PLUGINS=bundled,zipkin-header
+      - KONG_PLUGINS=bundled,zipkin-header,tcp-log-extends
       - KONG_REAL_IP_RECURSIVE=on
       - KONG_REAL_IP_HEADER=Cf-Connecting-Ip
       - KONG_TRACING_INSTRUMENTATIONS=all
@@ -44,6 +44,7 @@ services:
       - KONG_LOG_LEVEL=debug
     volumes:
       - ./plugins/zipkin-header/kong/plugins/zipkin-header:/usr/local/share/lua/5.1/kong/plugins/zipkin-header
+      - ./plugins/tcp-log-extends/kong/plugins/tcp-log-extends:/usr/local/share/lua/5.1/kong/plugins/tcp-log-extends
     ports:
       - 80:8000
       - 443:8443
