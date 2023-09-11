@@ -1,7 +1,7 @@
 # Welcome to
 ## Kong API Gateway Training and Workshop for test environment.
 
-# ITOPPLUS Adopt this repo to use before move on to production servers.
+## ITOPPLUS Adopt this repo to use before move on to production servers.
 
 
 > Presented by ITOPPLUS assoriated with DomeCloud co.,ltd.
